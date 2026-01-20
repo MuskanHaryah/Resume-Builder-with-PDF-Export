@@ -3,29 +3,108 @@
 @tailwind utilities;
 
 @layer base {
+  * {
+    @apply antialiased;
+  }
+
   body {
-    @apply bg-white text-gray-900 font-sans;
+    @apply bg-luna-50 text-gray-900 font-sans;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-serif font-bold;
+    @apply font-bold text-luna-500;
+  }
+
+  h1 {
+    @apply text-4xl md:text-5xl;
+  }
+
+  h2 {
+    @apply text-3xl md:text-4xl;
+  }
+
+  h3 {
+    @apply text-2xl md:text-3xl;
   }
 
   a {
-    @apply text-luna-200 hover:text-luna-300 transition-colors;
+    @apply text-luna-200 hover:text-luna-300 transition-colors duration-200;
+  }
+
+  input, textarea, select {
+    @apply border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-luna-200 focus:border-transparent transition-all;
   }
 }
 
 @layer components {
+  /* Buttons */
   .btn-primary {
-    @apply px-6 py-3 bg-luna-200 text-white rounded-lg hover:bg-luna-300 transition-colors font-medium;
+    @apply px-6 py-3 bg-gradient-to-r from-luna-200 to-luna-300 text-white rounded-lg hover:shadow-luna-lg transition-all duration-300 font-medium transform hover:-translate-y-0.5;
   }
 
   .btn-secondary {
-    @apply px-6 py-3 border-2 border-luna-200 text-luna-200 rounded-lg hover:bg-luna-100 transition-colors font-medium;
+    @apply px-6 py-3 border-2 border-luna-200 text-luna-200 rounded-lg hover:bg-luna-100/30 hover:border-luna-300 transition-all duration-300 font-medium;
   }
 
+  .btn-outline {
+    @apply px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:border-luna-200 hover:text-luna-200 transition-all duration-300 font-medium;
+  }
+
+  /* Cards */
   .card {
-    @apply bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow p-6;
+    @apply bg-white rounded-xl shadow-md hover:shadow-luna-lg transition-all duration-300 p-6;
+  }
+
+  .card-interactive {
+    @apply bg-white rounded-xl shadow-md hover:shadow-luna-xl transition-all duration-300 p-6 cursor-pointer transform hover:-translate-y-1;
+  }
+
+  /* Form Elements */
+  .input-field {
+    @apply w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-luna-200 focus:border-transparent transition-all duration-200;
+  }
+
+  .textarea-field {
+    @apply w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-luna-200 focus:border-transparent transition-all duration-200 resize-none;
+  }
+
+  .select-field {
+    @apply w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-luna-200 focus:border-transparent transition-all duration-200 bg-white;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .badge-primary {
+    @apply bg-luna-100/30 text-luna-300 border border-luna-200;
+  }
+
+  .badge-success {
+    @apply bg-green-100 text-green-800 border border-green-200;
+  }
+
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-800 border border-yellow-200;
+  }
+
+  .badge-error {
+    @apply bg-red-100 text-red-800 border border-red-200;
+  }
+
+  /* Container */
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Gradient Background */
+  .bg-gradient-luna {
+    @apply bg-gradient-to-br from-luna-100 via-luna-50 to-white;
+  }
+
+  /* Glass Effect */
+  .glass-effect {
+    @apply bg-white/80 backdrop-blur-sm border border-white/20 shadow-luna;
   }
 }
