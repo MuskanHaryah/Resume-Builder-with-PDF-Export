@@ -9,9 +9,13 @@ const LandingPage = () => {
       {/* Header */}
       <header className="container-custom py-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileText className="w-8 h-8 text-luna-200" />
-            <h1 className="text-2xl font-bold text-luna-500">Resume Builder</h1>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-luna-200 to-luna-300 rounded-lg">
+              <FileText className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-luna-400 to-luna-300 bg-clip-text text-transparent">
+              Resume Builder
+            </h1>
           </div>
         </div>
       </header>
@@ -119,14 +123,14 @@ const LandingPage = () => {
         </div>
 
         {/* Features Section */}
-        <div className="max-w-4xl mx-auto">
-          <h3 className="text-2xl font-bold text-center text-luna-500 mb-8">
+        <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-8 md:p-12">
+          <h3 className="text-3xl font-bold text-center text-luna-500 mb-12">
             Why Choose Our Resume Builder?
           </h3>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center p-6">
-              <div className="inline-flex p-4 bg-luna-100/30 rounded-full mb-4">
-                <CheckCircle2 className="w-8 h-8 text-luna-300" />
+              <div className="inline-flex p-4 bg-gradient-to-br from-luna-100 to-luna-200/30 rounded-full mb-4">
+                <CheckCircle2 className="w-8 h-8 text-luna-400" />
               </div>
               <h4 className="font-bold text-lg mb-2 text-luna-500">ATS-Optimized</h4>
               <p className="text-gray-600">
@@ -134,8 +138,8 @@ const LandingPage = () => {
               </p>
             </div>
             <div className="text-center p-6">
-              <div className="inline-flex p-4 bg-luna-100/30 rounded-full mb-4">
-                <Download className="w-8 h-8 text-luna-300" />
+              <div className="inline-flex p-4 bg-gradient-to-br from-luna-100 to-luna-200/30 rounded-full mb-4">
+                <Download className="w-8 h-8 text-luna-400" />
               </div>
               <h4 className="font-bold text-lg mb-2 text-luna-500">Instant Download</h4>
               <p className="text-gray-600">
@@ -143,8 +147,8 @@ const LandingPage = () => {
               </p>
             </div>
             <div className="text-center p-6">
-              <div className="inline-flex p-4 bg-luna-100/30 rounded-full mb-4">
-                <Sparkles className="w-8 h-8 text-luna-300" />
+              <div className="inline-flex p-4 bg-gradient-to-br from-luna-100 to-luna-200/30 rounded-full mb-4">
+                <Sparkles className="w-8 h-8 text-luna-400" />
               </div>
               <h4 className="font-bold text-lg mb-2 text-luna-500">AI-Powered</h4>
               <p className="text-gray-600">
