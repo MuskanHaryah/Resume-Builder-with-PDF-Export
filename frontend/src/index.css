@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-white text-gray-900 font-sans;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif font-bold;
+  }
+
+  a {
+    @apply text-luna-200 hover:text-luna-300 transition-colors;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-3 bg-luna-200 text-white rounded-lg hover:bg-luna-300 transition-colors font-medium;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 border-2 border-luna-200 text-luna-200 rounded-lg hover:bg-luna-100 transition-colors font-medium;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow p-6;
+  }
+}
