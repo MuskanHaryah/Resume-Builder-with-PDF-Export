@@ -17,7 +17,7 @@ const ManualBuilder = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-luna">
+    <div className="min-h-screen bg-luna-100">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="container-custom py-4">
