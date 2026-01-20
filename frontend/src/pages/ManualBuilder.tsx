@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PersonalInfoForm from '../components/manual/PersonalInfoForm';
-import { PersonalInfo } from '../types/resume';
+import type { PersonalInfo } from '../types/resume';
 
 const ManualBuilder = () => {
   const navigate = useNavigate();

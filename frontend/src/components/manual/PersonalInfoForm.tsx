@@ -1,5 +1,5 @@
 import { User, Mail, Phone, Linkedin, Github } from 'lucide-react';
-import { PersonalInfo } from '../../types/resume';
+import type { PersonalInfo } from '../../types/resume';
 
 interface PersonalInfoFormProps {
   data: PersonalInfo;
