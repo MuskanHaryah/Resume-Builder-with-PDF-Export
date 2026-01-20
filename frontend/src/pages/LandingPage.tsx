@@ -5,7 +5,7 @@ const LandingPage = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-luna">
+    <div className="min-h-screen bg-luna-100">
       {/* Header */}
       <header className="container-custom py-6">
         <div className="flex items-center justify-between">
