@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, FileText, ArrowRight, ArrowLeftIcon, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PersonalInfoForm from '../components/manual/PersonalInfoForm';
@@ -26,8 +26,11 @@ const ManualBuilder = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([1]));
-  const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([1]));
-  const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([1]));
+  
+  // Scroll to top on component mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
     firstName: '',
@@ -159,7 +162,7 @@ const ManualBuilder = () => {
                 {index < STEPS.length - 1 && (
                   <div
                     className={`flex-1 h-1 mx-2 rounded ${
-                      visitedSteps.has(step.id) ? 'bg-green-500' : 'bg-gray-200'
+                       visitedSteps.has(step.id + 1) ? 'bg-green-500' : 'bg-gray-200'
                     }`}
                   />
                 )}
