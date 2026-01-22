@@ -65,8 +65,8 @@ const LeadershipForm = ({ data, onChange }: LeadershipFormProps) => {
   };
 
   return (
-    <div className="card border-2 border-dashed border-luna-100">
-      <div className="flex items-center justify-between mb-6">
+    <div className="card">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h3 className="text-xl font-bold text-luna-500 flex items-center gap-2">
             <Award className="w-6 h-6 text-luna-200" />

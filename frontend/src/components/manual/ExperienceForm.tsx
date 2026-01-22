@@ -1,4 +1,4 @@
-import { Briefcase, Plus, Trash2, Calendar, List } from 'lucide-react';
+import { Briefcase, Plus, Trash2, Calendar, List, MapPin } from 'lucide-react';
 import type { Experience } from '../../types/resume';
 
 interface ExperienceFormProps {
@@ -12,6 +12,7 @@ const ExperienceForm = ({ data, onChange }: ExperienceFormProps) => {
       id: Date.now().toString(),
       company: '',
       title: '',
+      location: '',
       startDate: '',
       endDate: '',
       current: false,
@@ -139,6 +140,22 @@ const ExperienceForm = ({ data, onChange }: ExperienceFormProps) => {
                   />
                 </div>
 
+                {/* Location */}
+                <div className="md:col-span-2">
+                  <label htmlFor={`location-${exp.id}`} className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                    <MapPin className="w-4 h-4 text-luna-200" />
+                    Location <span className="text-gray-400 text-xs">(Optional)</span>
+                  </label>
+                  <input
+                    id={`location-${exp.id}`}
+                    type="text"
+                    value={exp.location || ''}
+                    onChange={(e) => updateExperience(exp.id, 'location', e.target.value)}
+                    className="input-field"
+                    placeholder="e.g., Karachi, Pakistan"
+                  />
+                </div>
+
                 {/* Start Date */}
                 <div>
                   <label htmlFor={`startDate-${exp.id}`} className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
@@ -197,7 +214,7 @@ const ExperienceForm = ({ data, onChange }: ExperienceFormProps) => {
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
                     <List className="w-4 h-4 text-luna-200" />
-                    Responsibilities & Achievements <span className="text-red-500">*</span>
+                    Description <span className="text-red-500">*</span>
                   </label>
                   <div className="space-y-3">
                     {exp.bulletPoints.map((bullet, bulletIndex) => (
@@ -210,15 +227,13 @@ const ExperienceForm = ({ data, onChange }: ExperienceFormProps) => {
                           className="input-field flex-1"
                           placeholder="e.g., Led team of 5 engineers to deliver product 2 weeks ahead of schedule"
                         />
-                        {exp.bulletPoints.length > 1 && (
-                          <button
-                            onClick={() => removeBulletPoint(exp.id, bulletIndex)}
-                            className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Remove bullet point"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => removeBulletPoint(exp.id, bulletIndex)}
+                          className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Remove bullet point"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     ))}
                     <button

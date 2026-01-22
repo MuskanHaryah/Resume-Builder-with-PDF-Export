@@ -1,7 +1,9 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, FileText, ArrowRight, ArrowLeftIcon, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import PersonalInfoForm from '../components/manual/PersonalInfoForm';
 import ProfessionalSummaryForm from '../components/manual/ProfessionalSummaryForm';
 import EducationForm from '../components/manual/EducationForm';
@@ -25,6 +27,11 @@ const STEPS = [
 
 const ManualBuilder = () => {
   const navigate = useNavigate();
+  const resumeRef = useRef<HTMLDivElement>(null);
+  
+  // State to track if resume exceeds one page
+  const [exceedsOnePage, setExceedsOnePage] = useState(false);
+  const [pageOverflowPercentage, setPageOverflowPercentage] = useState(0);
 
   // Load data from localStorage on mount
   const loadFromLocalStorage = <T,>(key: string, defaultValue: T): T => {
@@ -171,6 +178,175 @@ const ManualBuilder = () => {
 
   // Calculate ATS score
   const atsScore = useMemo(() => calculateATSScore(resumeData), [resumeData]);
+
+  // Check if resume exceeds one page (A4 ratio: 210mm x 297mm = 1:1.414)
+  const checkPageOverflow = useCallback(() => {
+    const resumeElement = document.getElementById('resume-content');
+    if (!resumeElement) return;
+
+    // A4 aspect ratio is 1:1.414 (width:height)
+    // We'll calculate based on a standard A4 at 96 DPI: 794px x 1123px
+    const a4HeightAtWidth = resumeElement.offsetWidth * 1.414;
+    const contentHeight = resumeElement.scrollHeight;
+    
+    const exceeds = contentHeight > a4HeightAtWidth;
+    const overflowPercent = exceeds ? Math.round(((contentHeight - a4HeightAtWidth) / a4HeightAtWidth) * 100) : 0;
+    
+    setExceedsOnePage(exceeds);
+    setPageOverflowPercentage(overflowPercent);
+  }, []);
+
+  // Check page overflow whenever resume data changes
+  useEffect(() => {
+    // Small delay to allow DOM to update
+    const timer = setTimeout(checkPageOverflow, 100);
+    return () => clearTimeout(timer);
+  }, [resumeData, checkPageOverflow]);
+
+  // Handle PDF Download
+  const handleDownloadPDF = async () => {
+    const resumeElement = document.getElementById('resume-content');
+    if (!resumeElement) {
+      console.error('Resume element not found');
+      toast.error('Resume preview not found');
+      return;
+    }
+
+    console.log('Starting PDF generation...');
+    console.log('Resume element:', resumeElement);
+    console.log('Resume element dimensions:', {
+      width: resumeElement.offsetWidth,
+      height: resumeElement.offsetHeight,
+      scrollHeight: resumeElement.scrollHeight
+    });
+
+    try {
+      toast.loading('Generating PDF...', { id: 'pdf-loading' });
+
+      // Wait a bit for any pending renders
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      console.log('Starting html2canvas...');
+      
+      // Capture the resume content as canvas
+      const canvas = await html2canvas(resumeElement, {
+        scale: 2,
+        useCORS: false,
+        allowTaint: false,
+        backgroundColor: '#ffffff',
+        logging: false,
+        foreignObjectRendering: false,
+        onclone: (clonedDoc) => {
+          // Remove all oklch colors from the cloned document
+          const allElements = clonedDoc.querySelectorAll('*');
+          allElements.forEach((el: any) => {
+            const computedStyle = window.getComputedStyle(el);
+            
+            // Check each style property and replace oklch with hex fallback
+            for (let i = 0; i < computedStyle.length; i++) {
+              const prop = computedStyle[i];
+              const value = computedStyle.getPropertyValue(prop);
+              
+              if (value && value.includes('oklch')) {
+                // Replace oklch with transparent or white
+                if (prop.includes('color') || prop.includes('background')) {
+                  el.style.setProperty(prop, 'transparent', 'important');
+                }
+              }
+            }
+          });
+          
+          // Also strip all style tags that might contain oklch
+          const styleTags = clonedDoc.querySelectorAll('style');
+          styleTags.forEach((style) => {
+            if (style.textContent && style.textContent.includes('oklch')) {
+              style.textContent = style.textContent.replace(/oklch\([^)]+\)/g, 'transparent');
+            }
+          });
+          
+          // Fix icon alignment in PDF only
+          const svgIcons = clonedDoc.querySelectorAll('svg');
+          svgIcons.forEach((svg: any) => {
+            svg.style.position = 'relative';
+            svg.style.top = '3px';
+          });
+        }
+      });
+
+      console.log('Canvas created:', {
+        width: canvas.width,
+        height: canvas.height
+      });
+
+      // A4 dimensions in mm
+      const pageWidth = 210;
+      const pageHeight = 297;
+      
+      // Calculate image dimensions to fit A4 width
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      console.log('PDF dimensions:', {
+        imgWidth,
+        imgHeight,
+        pageHeight,
+        pages: Math.ceil(imgHeight / pageHeight)
+      });
+
+      // Create PDF
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      console.log('Converting canvas to image...');
+      const imgData = canvas.toDataURL('image/png');
+      console.log('Image data length:', imgData.length);
+
+      // Check if content fits on one page
+      if (imgHeight <= pageHeight) {
+        console.log('Adding single page...');
+        // Single page - fits perfectly
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      } else {
+        console.log('Adding multiple pages...');
+        // Multi-page: split content across pages
+        let heightLeft = imgHeight;
+        let position = 0;
+        let pageNum = 0;
+
+        while (heightLeft > 0) {
+          if (pageNum > 0) {
+            pdf.addPage();
+          }
+          
+          console.log(`Adding page ${pageNum + 1}, position: ${position}`);
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          
+          heightLeft -= pageHeight;
+          position -= pageHeight;
+          pageNum++;
+        }
+      }
+
+      // Download PDF
+      const fileName = `resume_${personalInfo.firstName || 'my'}_${personalInfo.lastName || 'resume'}.pdf`;
+      console.log('Saving PDF as:', fileName);
+      pdf.save(fileName);
+      
+      toast.dismiss('pdf-loading');
+      toast.success('PDF downloaded successfully!');
+      console.log('PDF download complete!');
+    } catch (error: any) {
+      console.error('PDF download error - Full details:', error);
+      console.error('Error name:', error?.name);
+      console.error('Error message:', error?.message);
+      console.error('Error stack:', error?.stack);
+      toast.dismiss('pdf-loading');
+      toast.error(`Failed to download PDF: ${error?.message || 'Unknown error'}`);
+    }
+  };
 
   // Validate current step before moving to next
   const validateCurrentStep = (): boolean => {
@@ -362,7 +538,7 @@ const ManualBuilder = () => {
                   ATS Score: {atsScore.totalScore}/100
                 </span>
               </div>
-              <button className="btn-primary">
+              <button onClick={handleDownloadPDF} className="btn-primary">
                 Download PDF
               </button>
             </div>
@@ -412,9 +588,9 @@ const ManualBuilder = () => {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid lg:grid-cols-12 gap-6">
           {/* Left: Form Panel */}
-          <div className="space-y-6">
+          <div className="lg:col-span-5 space-y-6">
             {/* Current Form */}
             {renderCurrentForm()}
 
@@ -437,23 +613,27 @@ const ManualBuilder = () => {
               </span>
 
               <div className="flex-1 flex justify-end">
-                <button
-                  onClick={handleNext}
-                  disabled={currentStep === STEPS.length}
-                  className={`btn-primary flex items-center gap-2 ${
-                    currentStep === STEPS.length ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  {currentStep === STEPS.length ? 'Completed' : 'Next'}
-                  {currentStep < STEPS.length && <ArrowRight className="w-4 h-4" />}
-                </button>
+                {currentStep < STEPS.length && (
+                  <button
+                    onClick={handleNext}
+                    className="btn-primary flex items-center gap-2"
+                  >
+                    Next
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           </div>
 
           {/* Right: Preview Panel */}
-          <div className="lg:sticky lg:top-24 h-fit">
-            <ResumePreview data={resumeData} />
+          <div className="lg:col-span-7 sticky top-6 h-fit">
+            <ResumePreview 
+              ref={resumeRef} 
+              data={resumeData} 
+              exceedsOnePage={exceedsOnePage}
+              overflowPercentage={pageOverflowPercentage}
+            />
           </div>
         </div>
       </main>
