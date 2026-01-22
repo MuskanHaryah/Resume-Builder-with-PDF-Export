@@ -1,6 +1,7 @@
 export interface PersonalInfo {
   firstName: string;
   lastName: string;
+  address: string;
   email: string;
   phone: string;
   linkedin: string;
@@ -30,9 +31,8 @@ export interface Experience {
 export interface Project {
   id: string;
   name: string;
-  technologies: string;
-  description: string;
-  link: string;
+  technologies: string[];
+  bulletPoints: string[];
 }
 
 export interface Leadership {
@@ -41,7 +41,7 @@ export interface Leadership {
   organization: string;
   startDate: string;
   endDate: string;
-  description: string;
+  bulletPoints: string[];
 }
 
 export interface ResumeData {

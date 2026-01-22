@@ -1,4 +1,4 @@
-import { User, Mail, Phone, Linkedin, Github } from 'lucide-react';
+import { User, Mail, Phone, Linkedin, Github, MapPin } from 'lucide-react';
 import type { PersonalInfo } from '../../types/resume';
 
 interface PersonalInfoFormProps {
@@ -41,7 +41,7 @@ const PersonalInfoForm = ({ data, onChange }: PersonalInfoFormProps) => {
         {/* Last Name */}
         <div>
           <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-            Last Name <span className="text-red-500">*</span>
+            Last Name
           </label>
           <input
             type="text"
@@ -50,7 +50,22 @@ const PersonalInfoForm = ({ data, onChange }: PersonalInfoFormProps) => {
             onChange={(e) => handleChange('lastName', e.target.value)}
             className="input-field"
             placeholder="Doe"
-            required
+          />
+        </div>
+
+        {/* Address */}
+        <div>
+          <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-luna-300" />
+            Address <span className="text-gray-400 text-xs">(Optional)</span>
+          </label>
+          <input
+            type="text"
+            id="address"
+            value={data.address}
+            onChange={(e) => handleChange('address', e.target.value)}
+            className="input-field"
+            placeholder="Bengaluru, Karnataka, State 56008"
           />
         </div>
 
@@ -75,7 +90,7 @@ const PersonalInfoForm = ({ data, onChange }: PersonalInfoFormProps) => {
         <div>
           <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
             <Phone className="w-4 h-4 text-luna-300" />
-            Phone <span className="text-red-500">*</span>
+            Phone
           </label>
           <input
             type="tel"
@@ -84,7 +99,6 @@ const PersonalInfoForm = ({ data, onChange }: PersonalInfoFormProps) => {
             onChange={(e) => handleChange('phone', e.target.value)}
             className="input-field"
             placeholder="+1 (555) 123-4567"
-            required
           />
         </div>
 

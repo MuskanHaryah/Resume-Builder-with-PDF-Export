@@ -81,7 +81,7 @@ const SkillsForm = ({ data, onChange }: SkillsFormProps) => {
               {data.map((skill, index) => (
                 <div
                   key={index}
-                  className="badge-primary flex items-center gap-2 group"
+                  className="badge-primary"
                 >
                   <span>{skill}</span>
                   <button

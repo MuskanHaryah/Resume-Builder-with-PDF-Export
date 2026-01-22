@@ -1,4 +1,4 @@
-import { Award, Plus, Trash2, Calendar } from 'lucide-react';
+import { Award, Plus, Trash2, Calendar, List } from 'lucide-react';
 import type { Leadership } from '../../types/resume';
 
 interface LeadershipFormProps {
@@ -14,7 +14,7 @@ const LeadershipForm = ({ data, onChange }: LeadershipFormProps) => {
       organization: '',
       startDate: '',
       endDate: '',
-      description: '',
+      bulletPoints: [''],
     };
     onChange([...data, newLeadership]);
   };
@@ -23,10 +23,43 @@ const LeadershipForm = ({ data, onChange }: LeadershipFormProps) => {
     onChange(data.filter((lead) => lead.id !== id));
   };
 
-  const updateLeadership = (id: string, field: keyof Leadership, value: string) => {
+  const updateLeadership = (id: string, field: keyof Leadership, value: string | string[]) => {
     onChange(
       data.map((lead) =>
         lead.id === id ? { ...lead, [field]: value } : lead
+      )
+    );
+  };
+
+  const addBulletPoint = (id: string) => {
+    onChange(
+      data.map((lead) =>
+        lead.id === id
+          ? { ...lead, bulletPoints: [...lead.bulletPoints, ''] }
+          : lead
+      )
+    );
+  };
+
+  const removeBulletPoint = (id: string, index: number) => {
+    onChange(
+      data.map((lead) =>
+        lead.id === id
+          ? { ...lead, bulletPoints: lead.bulletPoints.filter((_, i) => i !== index) }
+          : lead
+      )
+    );
+  };
+
+  const updateBulletPoint = (id: string, index: number, value: string) => {
+    onChange(
+      data.map((lead) =>
+        lead.id === id
+          ? {
+              ...lead,
+              bulletPoints: lead.bulletPoints.map((bp, i) => (i === index ? value : bp)),
+            }
+          : lead
       )
     );
   };
@@ -144,17 +177,38 @@ const LeadershipForm = ({ data, onChange }: LeadershipFormProps) => {
 
                 {/* Description */}
                 <div className="md:col-span-2">
-                  <label htmlFor={`description-${leadership.id}`} className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                    <List className="w-4 h-4 text-luna-200" />
                     Description
                   </label>
-                  <textarea
-                    id={`description-${leadership.id}`}
-                    value={leadership.description}
-                    onChange={(e) => updateLeadership(leadership.id, 'description', e.target.value)}
-                    rows={3}
-                    className="input-field resize-none"
-                    placeholder="Describe your responsibilities, achievements, and impact..."
-                  />
+                  <div className="space-y-3">
+                    {leadership.bulletPoints.map((bullet, bulletIndex) => (
+                      <div key={bulletIndex} className="flex gap-2">
+                        <span className="text-luna-300 mt-3 font-bold">•</span>
+                        <input
+                          type="text"
+                          value={bullet}
+                          onChange={(e) => updateBulletPoint(leadership.id, bulletIndex, e.target.value)}
+                          className="input-field flex-1"
+                          placeholder="e.g., Organized events with 500+ participants"
+                        />
+                        <button
+                          onClick={() => removeBulletPoint(leadership.id, bulletIndex)}
+                          className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Remove bullet point"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => addBulletPoint(leadership.id)}
+                      className="text-luna-300 hover:text-luna-500 text-sm font-medium flex items-center gap-1 mt-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Bullet Point
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

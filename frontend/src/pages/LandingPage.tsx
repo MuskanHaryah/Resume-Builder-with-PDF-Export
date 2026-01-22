@@ -13,7 +13,7 @@ const LandingPage = () => {
             <div className="p-2 bg-gradient-to-br from-luna-200 to-luna-300 rounded-lg">
               <FileText className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-luna-400 to-luna-300 bg-clip-text text-transparent">
+            <h1 className="text-3xl md:text-4xl font-extrabold text-luna-500">
               Resume Builder
             </h1>
           </div>

@@ -37,7 +37,7 @@ const EducationForm = ({ data, onChange }: EducationFormProps) => {
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-xl font-bold text-luna-500 flex items-center gap-2">
           <GraduationCap className="w-6 h-6 text-luna-200" />
-          Education
+          Education <span className="text-red-500">*</span>
         </h3>
         <button
           onClick={addEducation}

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, FileText, ArrowRight, ArrowLeftIcon, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import PersonalInfoForm from '../components/manual/PersonalInfoForm';
 import ProfessionalSummaryForm from '../components/manual/ProfessionalSummaryForm';
 import EducationForm from '../components/manual/EducationForm';
@@ -24,29 +25,138 @@ const STEPS = [
 
 const ManualBuilder = () => {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([1]));
+
+  // Load data from localStorage on mount
+  const loadFromLocalStorage = <T,>(key: string, defaultValue: T): T => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  };
+
+  const [currentStep, setCurrentStep] = useState(() => 
+    loadFromLocalStorage('resume_currentStep', 1)
+  );
+  const [visitedSteps, setVisitedSteps] = useState<Set<number>>(() => {
+    const saved = loadFromLocalStorage<number[]>('resume_visitedSteps', [1]);
+    return new Set(saved);
+  });
+
+  const [personalInfo, setPersonalInfo] = useState<PersonalInfo>(() =>
+    loadFromLocalStorage('resume_personalInfo', {
+      firstName: '',
+      lastName: '',
+      address: '',
+      email: '',
+      phone: '',
+      linkedin: '',
+      github: '',
+    })
+  );
+
+  const [summary, setSummary] = useState<string>(() =>
+    loadFromLocalStorage('resume_summary', '')
+  );
   
+  const [education, setEducation] = useState<Education[]>(() =>
+    loadFromLocalStorage('resume_education', [])
+  );
+  
+  const [experience, setExperience] = useState<Experience[]>(() =>
+    loadFromLocalStorage('resume_experience', [])
+  );
+  
+  const [projects, setProjects] = useState<Project[]>(() => {
+    const savedProjects = loadFromLocalStorage<Project[]>('resume_projects', []);
+    // Migrate old project format to new format
+    return savedProjects.map((proj) => {
+      const anyProj = proj as unknown as Record<string, string | string[]>;
+      // If project has old structure, convert it
+      if (typeof anyProj.technologies === 'string' || 'description' in anyProj || 'link' in anyProj) {
+        return {
+          id: (anyProj.id as string) || Date.now().toString(),
+          name: (anyProj.name as string) || '',
+          technologies: typeof anyProj.technologies === 'string' 
+            ? (anyProj.technologies as string).split(',').map((t: string) => t.trim()).filter(Boolean)
+            : (proj.technologies || []),
+          bulletPoints: anyProj.description ? [anyProj.description as string] : (proj.bulletPoints || []),
+        };
+      }
+      // Already in new format
+      return proj;
+    });
+  });
+  
+  const [skills, setSkills] = useState<string[]>(() =>
+    loadFromLocalStorage('resume_skills', [])
+  );
+  
+  const [leadership, setLeadership] = useState<Leadership[]>(() => {
+    const savedLeadership = loadFromLocalStorage<Leadership[]>('resume_leadership', []);
+    // Migrate old leadership format to new format
+    return savedLeadership.map((lead) => {
+      const anyLead = lead as unknown as Record<string, string | string[]>;
+      // If leadership has old structure with description, convert it
+      if ('description' in anyLead && !('bulletPoints' in anyLead)) {
+        return {
+          id: (anyLead.id as string) || Date.now().toString(),
+          title: (anyLead.title as string) || '',
+          organization: (anyLead.organization as string) || '',
+          startDate: (anyLead.startDate as string) || '',
+          endDate: (anyLead.endDate as string) || '',
+          bulletPoints: anyLead.description ? [anyLead.description as string] : [''],
+        };
+      }
+      // Already in new format
+      return lead;
+    });
+  });
+
   // Scroll to top on component mount
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-  
-  const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    linkedin: '',
-    github: '',
-  });
 
-  const [summary, setSummary] = useState<string>('');
-  const [education, setEducation] = useState<Education[]>([]);
-  const [experience, setExperience] = useState<Experience[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [skills, setSkills] = useState<string[]>([]);
-  const [leadership, setLeadership] = useState<Leadership[]>([]);
+  // Save currentStep to localStorage
+  useEffect(() => {
+    localStorage.setItem('resume_currentStep', JSON.stringify(currentStep));
+  }, [currentStep]);
+
+  // Save visitedSteps to localStorage
+  useEffect(() => {
+    localStorage.setItem('resume_visitedSteps', JSON.stringify(Array.from(visitedSteps)));
+  }, [visitedSteps]);
+
+  // Save to localStorage whenever data changes
+  useEffect(() => {
+    localStorage.setItem('resume_personalInfo', JSON.stringify(personalInfo));
+  }, [personalInfo]);
+
+  useEffect(() => {
+    localStorage.setItem('resume_summary', JSON.stringify(summary));
+  }, [summary]);
+
+  useEffect(() => {
+    localStorage.setItem('resume_education', JSON.stringify(education));
+  }, [education]);
+
+  useEffect(() => {
+    localStorage.setItem('resume_experience', JSON.stringify(experience));
+  }, [experience]);
+
+  useEffect(() => {
+    localStorage.setItem('resume_projects', JSON.stringify(projects));
+  }, [projects]);
+
+  useEffect(() => {
+    localStorage.setItem('resume_skills', JSON.stringify(skills));
+  }, [skills]);
+
+  useEffect(() => {
+    localStorage.setItem('resume_leadership', JSON.stringify(leadership));
+  }, [leadership]);
 
   // Combine all data for preview and ATS calculation
   const resumeData: ResumeData = useMemo(() => ({
@@ -62,8 +172,139 @@ const ManualBuilder = () => {
   // Calculate ATS score
   const atsScore = useMemo(() => calculateATSScore(resumeData), [resumeData]);
 
+  // Validate current step before moving to next
+  const validateCurrentStep = (): boolean => {
+    switch (currentStep) {
+      case 1: // Personal Info - only firstName and email are mandatory
+        if (!personalInfo.firstName.trim()) {
+          toast.error('Please fill in your first name');
+          return false;
+        }
+        if (!personalInfo.email.trim()) {
+          toast.error('Please fill in your email address');
+          return false;
+        }
+        return true;
+      case 2: // Professional Summary - mandatory
+        if (!summary.trim()) {
+          toast.error('Please write a professional summary');
+          return false;
+        }
+        return true;
+      case 3: // Education - mandatory (at least one entry with all required fields)
+        if (education.length === 0) {
+          toast.error('Please add at least one education entry');
+          return false;
+        }
+        // Check if all education entries have required fields filled
+        for (let i = 0; i < education.length; i++) {
+          const edu = education[i];
+          if (!edu.university.trim()) {
+            toast.error('Please fill in the University/Institution field');
+            return false;
+          }
+          if (!edu.degree.trim()) {
+            toast.error('Please fill in the Degree field');
+            return false;
+          }
+          if (!edu.field.trim()) {
+            toast.error('Please fill in the Field of Study');
+            return false;
+          }
+          if (!edu.startDate) {
+            toast.error('Please select the Start Date');
+            return false;
+          }
+          if (!edu.endDate) {
+            toast.error('Please select the End Date');
+            return false;
+          }
+        }
+        return true;
+      case 4: // Experience - optional but if added, must be complete
+        if (experience.length > 0) {
+          for (let i = 0; i < experience.length; i++) {
+            const exp = experience[i];
+            if (!exp.company.trim()) {
+              toast.error('Please fill in the Company field');
+              return false;
+            }
+            if (!exp.title.trim()) {
+              toast.error('Please fill in the Job Title field');
+              return false;
+            }
+            if (!exp.startDate) {
+              toast.error('Please select the Start Date');
+              return false;
+            }
+            // Check if current is false, then endDate is required
+            if (!exp.current && !exp.endDate) {
+              toast.error('Please select the End Date or check "I currently work here"');
+              return false;
+            }
+            // Check if at least one bullet point has content
+            const hasValidBullet = exp.bulletPoints.some(bp => bp.trim().length > 0);
+            if (!hasValidBullet) {
+              toast.error('Please add at least one responsibility');
+              return false;
+            }
+          }
+        }
+        return true;
+      case 5: // Projects - optional but if added, must be complete
+        if (projects.length > 0) {
+          for (let i = 0; i < projects.length; i++) {
+            const proj = projects[i];
+            if (!proj.name.trim()) {
+              toast.error('Please fill in the Project Name');
+              return false;
+            }
+            if (proj.technologies.length === 0) {
+              toast.error('Please add at least one technology for the project');
+              return false;
+            }
+            if (proj.bulletPoints.length === 0) {
+              toast.error('Please add at least one bullet point describing the project');
+              return false;
+            }
+          }
+        }
+        return true;
+      case 6: // Skills - mandatory (at least one skill)
+        if (skills.length === 0) {
+          toast.error('Please add at least one skill');
+          return false;
+        }
+        return true;
+      case 7: // Leadership - optional but if added, must be complete
+        if (leadership.length > 0) {
+          for (let i = 0; i < leadership.length; i++) {
+            const lead = leadership[i];
+            if (!lead.title.trim()) {
+              toast.error('Please fill in the Title/Role field');
+              return false;
+            }
+            if (!lead.organization.trim()) {
+              toast.error('Please fill in the Organization field');
+              return false;
+            }
+            if (lead.bulletPoints.length === 0 || !lead.bulletPoints.some(bp => bp.trim())) {
+              toast.error('Please add at least one bullet point describing your leadership role');
+              return false;
+            }
+          }
+        }
+        return true;
+      default:
+        return true;
+    }
+  };
+
   const handleNext = () => {
     if (currentStep < STEPS.length) {
+      if (!validateCurrentStep()) {
+        return; // Don't proceed if validation fails
+      }
       setVisitedSteps(prev => new Set([...prev, currentStep + 1]));
       setCurrentStep(currentStep + 1);
     }
@@ -179,31 +420,34 @@ const ManualBuilder = () => {
 
             {/* Navigation Buttons */}
             <div className="flex items-center justify-between gap-4 pt-4">
-              <button
-                onClick={handleBack}
-                disabled={currentStep === 1}
-                className={`px-6 py-3 bg-white border-2 border-luna-300 text-luna-500 font-semibold rounded-lg hover:bg-luna-50 transition-colors flex items-center gap-2 ${
-                  currentStep === 1 ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                <ArrowLeftIcon className="w-4 h-4" />
-                Back
-              </button>
+              <div className="flex-1">
+                {currentStep > 1 && (
+                  <button
+                    onClick={handleBack}
+                    className="px-6 py-3 bg-white border-2 border-luna-300 text-luna-500 font-semibold rounded-lg hover:bg-luna-50 transition-colors flex items-center gap-2"
+                  >
+                    <ArrowLeftIcon className="w-4 h-4" />
+                    Back
+                  </button>
+                )}
+              </div>
 
               <span className="text-sm text-gray-600">
                 Step {currentStep} of {STEPS.length}
               </span>
 
-              <button
-                onClick={handleNext}
-                disabled={currentStep === STEPS.length}
-                className={`btn-primary flex items-center gap-2 ${
-                  currentStep === STEPS.length ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                {currentStep === STEPS.length ? 'Completed' : 'Next'}
-                {currentStep < STEPS.length && <ArrowRight className="w-4 h-4" />}
-              </button>
+              <div className="flex-1 flex justify-end">
+                <button
+                  onClick={handleNext}
+                  disabled={currentStep === STEPS.length}
+                  className={`btn-primary flex items-center gap-2 ${
+                    currentStep === STEPS.length ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {currentStep === STEPS.length ? 'Completed' : 'Next'}
+                  {currentStep < STEPS.length && <ArrowRight className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
           </div>
 

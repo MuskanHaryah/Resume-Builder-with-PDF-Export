@@ -177,12 +177,17 @@ const ExperienceForm = ({ data, onChange }: ExperienceFormProps) => {
                       type="checkbox"
                       checked={exp.current}
                       onChange={(e) => {
-                        updateExperience(exp.id, 'current', e.target.checked);
-                        if (e.target.checked) {
-                          updateExperience(exp.id, 'endDate', '');
-                        }
+                        const isChecked = e.target.checked;
+                        const updatedExp = {
+                          ...exp,
+                          current: isChecked,
+                          endDate: isChecked ? '' : exp.endDate,
+                        };
+                        onChange(
+                          data.map((item) => (item.id === exp.id ? updatedExp : item))
+                        );
                       }}
-                      className="w-4 h-4 text-luna-200 border-gray-300 rounded focus:ring-luna-200"
+                      className="w-4 h-4 text-luna-200 border-gray-300 rounded focus:ring-luna-200 cursor-pointer"
                     />
                     <span className="text-sm font-medium text-gray-700">I currently work here</span>
                   </label>
