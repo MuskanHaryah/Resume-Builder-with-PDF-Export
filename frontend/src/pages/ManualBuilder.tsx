@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, FileText, ArrowRight, ArrowLeftIcon, Check } from 'lucide-react';
+import { ArrowLeft, FileText, ArrowRight, ArrowLeftIcon, Check, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import html2canvas from 'html2canvas';
@@ -12,6 +12,7 @@ import ProjectsForm from '../components/manual/ProjectsForm';
 import SkillsForm from '../components/manual/SkillsForm';
 import LeadershipForm from '../components/manual/LeadershipForm';
 import ResumePreview from '../components/preview/ResumePreview';
+import ATSBreakdown from '../components/ATSBreakdown';
 import type { PersonalInfo, Education, Experience, Project, Leadership, ResumeData } from '../types/resume';
 import { calculateATSScore, getScoreColor } from '../utils/atsCalculator';
 
@@ -32,6 +33,14 @@ const ManualBuilder = () => {
   // State to track if resume exceeds one page
   const [exceedsOnePage, setExceedsOnePage] = useState(false);
   const [pageOverflowPercentage, setPageOverflowPercentage] = useState(0);
+
+  // State to track ATS modal open/close
+  const [isATSModalOpen, setIsATSModalOpen] = useState(false);
+  
+  // State for download modal
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadComplete, setDownloadComplete] = useState(false);
 
   // Load data from localStorage on mount
   const loadFromLocalStorage = <T,>(key: string, defaultValue: T): T => {
@@ -203,14 +212,111 @@ const ManualBuilder = () => {
     return () => clearTimeout(timer);
   }, [resumeData, checkPageOverflow]);
 
+  // Clear localStorage
+  const clearResumeData = () => {
+    localStorage.removeItem('resume_currentStep');
+    localStorage.removeItem('resume_visitedSteps');
+    localStorage.removeItem('resume_personalInfo');
+    localStorage.removeItem('resume_summary');
+    localStorage.removeItem('resume_education');
+    localStorage.removeItem('resume_experience');
+    localStorage.removeItem('resume_projects');
+    localStorage.removeItem('resume_skills');
+    localStorage.removeItem('resume_leadership');
+  };
+
+  // Handle navigation after download
+  const handleGoHome = () => {
+    clearResumeData();
+    navigate('/');
+  };
+
+  const handleMakeAnother = () => {
+    clearResumeData();
+    setIsDownloadModalOpen(false);
+    setDownloadComplete(false);
+    // Reset to first step
+    window.location.reload();
+  };
+
+  // Validate all mandatory sections before download
+  const validateAllMandatorySections = (): boolean => {
+    // 1. Personal Info - mandatory fields
+    if (!personalInfo.firstName.trim()) {
+      toast.error('Please fill in your First Name in Personal Info section');
+      setCurrentStep(1);
+      return false;
+    }
+    if (!personalInfo.lastName.trim()) {
+      toast.error('Please fill in your Last Name in Personal Info section');
+      setCurrentStep(1);
+      return false;
+    }
+    if (!personalInfo.email.trim() || !personalInfo.email.includes('@')) {
+      toast.error('Please provide a valid Email in Personal Info section');
+      setCurrentStep(1);
+      return false;
+    }
+
+    // 2. Summary - mandatory
+    if (!summary.trim()) {
+      toast.error('Please add a Professional Summary');
+      setCurrentStep(2);
+      return false;
+    }
+
+    // 3. Education - at least one complete entry
+    if (education.length === 0) {
+      toast.error('Please add at least one Education entry');
+      setCurrentStep(3);
+      return false;
+    }
+    for (const edu of education) {
+      if (!edu.university.trim()) {
+        toast.error('Please complete all Education fields (University is required)');
+        setCurrentStep(3);
+        return false;
+      }
+      if (!edu.degree.trim()) {
+        toast.error('Please complete all Education fields (Degree is required)');
+        setCurrentStep(3);
+        return false;
+      }
+      if (!edu.field.trim()) {
+        toast.error('Please complete all Education fields (Field of Study is required)');
+        setCurrentStep(3);
+        return false;
+      }
+    }
+
+    // 4. Skills - at least one skill
+    if (skills.length === 0) {
+      toast.error('Please add at least one Skill');
+      setCurrentStep(6);
+      return false;
+    }
+
+    return true;
+  };
+
   // Handle PDF Download
   const handleDownloadPDF = async () => {
+    // Validate all mandatory sections first
+    if (!validateAllMandatorySections()) {
+      return;
+    }
+
     const resumeElement = document.getElementById('resume-content');
     if (!resumeElement) {
       console.error('Resume element not found');
       toast.error('Resume preview not found');
       return;
     }
+
+    // Open modal and start downloading
+    setIsDownloadModalOpen(true);
+    setIsDownloading(true);
+    setDownloadComplete(false);
 
     console.log('Starting PDF generation...');
     console.log('Resume element:', resumeElement);
@@ -221,14 +327,13 @@ const ManualBuilder = () => {
     });
 
     try {
-      toast.loading('Generating PDF...', { id: 'pdf-loading' });
 
       // Wait a bit for any pending renders
       await new Promise(resolve => setTimeout(resolve, 300));
 
       console.log('Starting html2canvas...');
       
-      // Capture the resume content as canvas
+      // Capture the resume content as canvas - simplified approach
       const canvas = await html2canvas(resumeElement, {
         scale: 2,
         useCORS: false,
@@ -237,38 +342,12 @@ const ManualBuilder = () => {
         logging: false,
         foreignObjectRendering: false,
         onclone: (clonedDoc) => {
-          // Remove all oklch colors from the cloned document
-          const allElements = clonedDoc.querySelectorAll('*');
-          allElements.forEach((el: any) => {
-            const computedStyle = window.getComputedStyle(el);
-            
-            // Check each style property and replace oklch with hex fallback
-            for (let i = 0; i < computedStyle.length; i++) {
-              const prop = computedStyle[i];
-              const value = computedStyle.getPropertyValue(prop);
-              
-              if (value && value.includes('oklch')) {
-                // Replace oklch with transparent or white
-                if (prop.includes('color') || prop.includes('background')) {
-                  el.style.setProperty(prop, 'transparent', 'important');
-                }
-              }
-            }
-          });
-          
-          // Also strip all style tags that might contain oklch
+          // Only remove oklch colors, don't mess with anything else
           const styleTags = clonedDoc.querySelectorAll('style');
           styleTags.forEach((style) => {
             if (style.textContent && style.textContent.includes('oklch')) {
-              style.textContent = style.textContent.replace(/oklch\([^)]+\)/g, 'transparent');
+              style.textContent = style.textContent.replace(/oklch\([^)]+\)/g, '#ffffff');
             }
-          });
-          
-          // Fix icon alignment in PDF only
-          const svgIcons = clonedDoc.querySelectorAll('svg');
-          svgIcons.forEach((svg: any) => {
-            svg.style.position = 'relative';
-            svg.style.top = '3px';
           });
         }
       });
@@ -281,6 +360,8 @@ const ManualBuilder = () => {
       // A4 dimensions in mm
       const pageWidth = 210;
       const pageHeight = 297;
+      const bottomMargin = 15; // Leave 15mm space at the bottom of each page
+      const usablePageHeight = pageHeight - bottomMargin;
       
       // Calculate image dimensions to fit A4 width
       const imgWidth = pageWidth;
@@ -290,7 +371,8 @@ const ManualBuilder = () => {
         imgWidth,
         imgHeight,
         pageHeight,
-        pages: Math.ceil(imgHeight / pageHeight)
+        usablePageHeight,
+        pages: Math.ceil(imgHeight / usablePageHeight)
       });
 
       // Create PDF
@@ -304,29 +386,72 @@ const ManualBuilder = () => {
       const imgData = canvas.toDataURL('image/png');
       console.log('Image data length:', imgData.length);
 
-      // Check if content fits on one page
-      if (imgHeight <= pageHeight) {
+      // Check if content fits on one page (with bottom margin)
+      // Add 5% tolerance to prevent creating a second page for minor overflows
+      const toleranceThreshold = usablePageHeight * 1.05;
+      
+      if (imgHeight <= toleranceThreshold) {
         console.log('Adding single page...');
-        // Single page - fits perfectly
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        // If slightly over, scale down to fit perfectly
+        const finalHeight = Math.min(imgHeight, usablePageHeight);
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, finalHeight);
       } else {
-        console.log('Adding multiple pages...');
-        // Multi-page: split content across pages
-        let heightLeft = imgHeight;
-        let position = 0;
-        let pageNum = 0;
-
-        while (heightLeft > 0) {
-          if (pageNum > 0) {
-            pdf.addPage();
+        console.log('Adding multiple pages with proper slicing...');
+        
+        // Calculate pixels per mm for precise slicing
+        const pxPerMm = canvas.width / imgWidth;
+        const usablePageHeightPx = usablePageHeight * pxPerMm;
+        const topMarginPx = 15 * pxPerMm; // 15mm top margin for page 2 onwards
+        
+        // First page
+        const page1Canvas = document.createElement('canvas');
+        page1Canvas.width = canvas.width;
+        page1Canvas.height = Math.min(usablePageHeightPx, canvas.height);
+        const ctx1 = page1Canvas.getContext('2d');
+        
+        if (ctx1) {
+          ctx1.fillStyle = '#ffffff';
+          ctx1.fillRect(0, 0, page1Canvas.width, page1Canvas.height);
+          ctx1.drawImage(canvas, 0, 0);
+          
+          const page1Data = page1Canvas.toDataURL('image/png');
+          pdf.addImage(page1Data, 'PNG', 0, 0, imgWidth, usablePageHeight);
+        }
+        
+        // Additional pages
+        let currentY = usablePageHeightPx;
+        
+        while (currentY < canvas.height) {
+          pdf.addPage();
+          
+          const remainingHeight = canvas.height - currentY;
+          const sliceHeight = Math.min(usablePageHeightPx, remainingHeight);
+          
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = sliceHeight + topMarginPx;
+          const ctx = pageCanvas.getContext('2d');
+          
+          if (ctx) {
+            // White background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+            
+            // Draw the slice with top margin
+            ctx.drawImage(
+              canvas,
+              0, currentY,
+              canvas.width, sliceHeight,
+              0, topMarginPx,
+              canvas.width, sliceHeight
+            );
+            
+            const pageData = pageCanvas.toDataURL('image/png');
+            const pageImgHeight = ((sliceHeight + topMarginPx) / canvas.width) * imgWidth;
+            pdf.addImage(pageData, 'PNG', 0, 0, imgWidth, pageImgHeight);
           }
           
-          console.log(`Adding page ${pageNum + 1}, position: ${position}`);
-          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-          
-          heightLeft -= pageHeight;
-          position -= pageHeight;
-          pageNum++;
+          currentY += usablePageHeightPx;
         }
       }
 
@@ -335,16 +460,16 @@ const ManualBuilder = () => {
       console.log('Saving PDF as:', fileName);
       pdf.save(fileName);
       
-      toast.dismiss('pdf-loading');
-      toast.success('PDF downloaded successfully!');
+      // Mark download as complete
+      setIsDownloading(false);
+      setDownloadComplete(true);
       console.log('PDF download complete!');
-    } catch (error: any) {
-      console.error('PDF download error - Full details:', error);
-      console.error('Error name:', error?.name);
-      console.error('Error message:', error?.message);
-      console.error('Error stack:', error?.stack);
-      toast.dismiss('pdf-loading');
-      toast.error(`Failed to download PDF: ${error?.message || 'Unknown error'}`);
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error('PDF download error:', errorMsg);
+      setIsDownloading(false);
+      setIsDownloadModalOpen(false);
+      toast.error(`Failed to download PDF: ${errorMsg}`);
     }
   };
 
@@ -513,6 +638,20 @@ const ManualBuilder = () => {
     }
   };
 
+  // Check if all mandatory sections are complete
+  const isMandatorySectionsComplete = useMemo(() => {
+    return (
+      personalInfo.firstName.trim() !== '' &&
+      personalInfo.lastName.trim() !== '' &&
+      personalInfo.email.trim() !== '' &&
+      personalInfo.email.includes('@') &&
+      summary.trim() !== '' &&
+      education.length > 0 &&
+      education.every(edu => edu.university.trim() && edu.degree.trim() && edu.field.trim()) &&
+      skills.length > 0
+    );
+  }, [personalInfo, summary, education, skills]);
+
   return (
     <div className="min-h-screen bg-luna-100">
       {/* Header */}
@@ -538,7 +677,19 @@ const ManualBuilder = () => {
                   ATS Score: {atsScore.totalScore}/100
                 </span>
               </div>
-              <button onClick={handleDownloadPDF} className="btn-primary">
+              <button onClick={() => setIsATSModalOpen(true)} className="btn-secondary px-4 py-2">
+                View Analysis
+              </button>
+              <button 
+                onClick={handleDownloadPDF} 
+                disabled={!isMandatorySectionsComplete}
+                className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                  isMandatorySectionsComplete
+                    ? 'btn-primary hover:opacity-90'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+                title={!isMandatorySectionsComplete ? 'Please complete all mandatory sections: Personal Info, Summary, Education, and Skills' : 'Download your resume as PDF'}
+              >
                 Download PDF
               </button>
             </div>
@@ -594,6 +745,15 @@ const ManualBuilder = () => {
             {/* Current Form */}
             {renderCurrentForm()}
 
+            {/* ATS Score Button */}
+            <button
+              onClick={() => setIsATSModalOpen(true)}
+              className="w-full px-4 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-semibold rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all flex items-center justify-center gap-2"
+            >
+              <TrendingUp className="w-5 h-5" />
+              View ATS Analysis
+            </button>
+
             {/* Navigation Buttons */}
             <div className="flex items-center justify-between gap-4 pt-4">
               <div className="flex-1">
@@ -637,6 +797,63 @@ const ManualBuilder = () => {
           </div>
         </div>
       </main>
+
+      {/* ATS Modal - Outside of main so it doesn't get blurred */}
+      <ATSBreakdown 
+        atsScore={atsScore} 
+        isOpen={isATSModalOpen}
+        onClose={() => setIsATSModalOpen(false)}
+      />
+
+      {/* Download Modal */}
+      {isDownloadModalOpen && (
+        <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+            {isDownloading ? (
+              <div className="text-center">
+                <div className="mb-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                    <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Generating PDF...</h3>
+                <p className="text-gray-600">Please wait while we prepare your resume</p>
+              </div>
+            ) : downloadComplete ? (
+              <div className="text-center">
+                <div className="mb-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                    <Check className="w-8 h-8 text-green-600" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">PDF Downloaded Successfully!</h3>
+                <p className="text-gray-600 mb-8">What would you like to do next?</p>
+                
+                <div className="space-y-3">
+                  <button
+                    onClick={handleGoHome}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-semibold rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all flex items-center justify-center gap-2"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                    Go to Home Page
+                  </button>
+                  
+                  <button
+                    onClick={handleMakeAnother}
+                    className="w-full px-6 py-3 bg-white border-2 border-indigo-500 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50 transition-all flex items-center justify-center gap-2"
+                  >
+                    <FileText className="w-5 h-5" />
+                    Make Another Resume
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

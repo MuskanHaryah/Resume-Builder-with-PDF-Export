@@ -59,7 +59,7 @@ const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ data, ex
   };
 
   return (
-    <div className="bg-white shadow-lg rounded-lg overflow-visible">
+    <div className="bg-white shadow-lg rounded-lg">
       {/* Preview Header */}
       <div className="bg-gray-100 px-6 py-3 border-b border-gray-300 flex justify-between items-start">
         <div>
@@ -82,7 +82,7 @@ const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ data, ex
       <div 
         ref={ref}
         id="resume-content"
-        className="p-6 bg-white overflow-visible"
+        className="p-6 bg-white"
         style={{ fontFamily: 'Times New Roman, Georgia, serif' }}
       >
         {/* HEADER - Name (Italic, Centered) */}
@@ -105,8 +105,8 @@ const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ data, ex
         )}
 
         {/* Contact Information Row - All in one line with inline SVG icons */}
-        <div className="text-center text-xs text-black mb-3" style={{ fontFamily: 'Arial, sans-serif' }}>
-          <div className="flex justify-center items-center gap-4 flex-wrap">
+        <div className="text-center text-xs text-black mb-3" style={{ fontFamily: 'Arial, sans-serif', lineHeight: '1.8' }}>
+          <div className="flex justify-center items-center gap-4 flex-wrap" style={{ paddingTop: '2px', paddingBottom: '2px' }}>
             {personalInfo.phone && (
               <span className="flex items-center gap-1">
                 <PhoneIcon />
@@ -188,10 +188,12 @@ const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ data, ex
                     </div>
                     <div className="text-right text-black">
                       <div className="font-bold">{formatDate(exp.startDate)} - {exp.current ? 'Present' : formatDate(exp.endDate)}</div>
-                      {exp.location && <div>{exp.location}</div>}
                     </div>
                   </div>
-                  <div className="italic text-black mb-1">{exp.title}</div>
+                  <div className="flex justify-between items-start mb-1">
+                    <div className="italic text-black">{exp.title}</div>
+                    {exp.location && <div className="text-black">{exp.location}</div>}
+                  </div>
                   {exp.bulletPoints.length > 0 && exp.bulletPoints[0] && (
                     <ul className="list-none ml-4 space-y-0.5">
                       {exp.bulletPoints.map((bullet, idx) => (

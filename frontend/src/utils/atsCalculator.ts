@@ -165,7 +165,7 @@ export const calculateATSScore = (data: ResumeData): ATSScore => {
     let projectsScore = 0;
     
     const validProjects = data.projects.filter(proj =>
-      proj.name && proj.technologies && proj.description
+      proj.name && proj.technologies && proj.bulletPoints && proj.bulletPoints.length > 0
     );
     
     if (validProjects.length >= 2) projectsScore = 10;
@@ -182,13 +182,7 @@ export const calculateATSScore = (data: ResumeData): ATSScore => {
   }
 
   // 7. FORMATTING & STRUCTURE (0-10 points)
-  let formattingScore = 10; // Start with perfect, deduct for issues
-  
-  // Check for overly long text (ATS may truncate)
-  if (data.summary && data.summary.length > 600) {
-    formattingScore -= 2;
-    feedback.push('Summary is too long (may be truncated by ATS)');
-  }
+  let formattingScore = 0;
   
   // Check for reasonable section balance
   const totalSections = [
@@ -199,9 +193,25 @@ export const calculateATSScore = (data: ResumeData): ATSScore => {
     data.projects.length > 0 ? 1 : 0,
   ].reduce((a, b) => a + b, 0);
   
-  if (totalSections < 3) {
-    formattingScore -= 3;
-    feedback.push('Add more sections for a complete resume');
+  // Award points based on completeness
+  if (totalSections >= 5) {
+    formattingScore = 10;
+  } else if (totalSections >= 4) {
+    formattingScore = 8;
+  } else if (totalSections >= 3) {
+    formattingScore = 6;
+  } else if (totalSections >= 2) {
+    formattingScore = 3;
+  } else if (totalSections >= 1) {
+    formattingScore = 1;
+  } else {
+    feedback.push('Add sections to your resume (summary, experience, education, skills, projects)');
+  }
+  
+  // Deduct for overly long text (ATS may truncate)
+  if (data.summary && data.summary.length > 600) {
+    formattingScore = Math.max(0, formattingScore - 2);
+    feedback.push('Summary is too long (may be truncated by ATS)');
   }
   
   breakdown.formatting = formattingScore;
@@ -228,7 +238,12 @@ export const calculateATSScore = (data: ResumeData): ATSScore => {
 
   // Add positive feedback for good scores
   if (totalScore >= 90) {
-    feedback.unshift('Excellent! Your resume is well-optimized for ATS systems.');
+    // Even with a high score, if there are specific suggestions, show them
+    if (feedback.length > 0) {
+      feedback.unshift('Excellent! Your resume is well-optimized for ATS systems.');
+    } else {
+      feedback.unshift('Perfect! Your resume is fully optimized for ATS systems.');
+    }
   } else if (totalScore >= 75) {
     feedback.unshift('Good resume! Minor improvements will make it even better.');
   } else if (totalScore >= 60) {

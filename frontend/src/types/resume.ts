@@ -34,6 +34,22 @@ export interface Project {
   name: string;
   technologies: string[];
   bulletPoints: string[];
+  link?: string;
+}
+
+export interface ATSScore {
+  totalScore: number;
+  breakdown: {
+    contactInfo: number;
+    summary: number;
+    experience: number;
+    education: number;
+    skills: number;
+    projects: number;
+    formatting: number;
+  };
+  feedback: string[];
+  grade: string;
 }
 
 export interface Leadership {
