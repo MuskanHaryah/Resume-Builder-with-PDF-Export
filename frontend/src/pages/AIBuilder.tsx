@@ -54,23 +54,26 @@ const AIBuilder = () => {
     
     setIsExtracting(true);
     try {
-      // TODO: Call backend API for AI extraction
-      // For now, simulate with mock data
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Call backend API for AI extraction
+      const response = await fetch('http://localhost:5000/api/ai/extract-keywords', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ jobDescription }),
+      });
       
-      // Mock extracted keywords (will be replaced with actual API call)
-      const mockKeywords: ExtractedKeywords = {
-        skills: ['React', 'Node.js', 'TypeScript', 'MongoDB', 'REST APIs'],
-        responsibilities: ['Build web applications', 'Write clean code', 'Collaborate with team'],
-        qualifications: ['3+ years experience', 'Bachelor\'s degree', 'Strong problem-solving'],
-        actionVerbs: ['Developed', 'Led', 'Implemented', 'Designed', 'Optimized'],
-        keywords: ['full-stack', 'agile', 'scalable', 'user experience']
-      };
+      const result = await response.json();
       
-      setExtractedKeywords(mockKeywords);
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to extract keywords');
+      }
+      
+      setExtractedKeywords(result.data);
       setCurrentStep('keywords');
     } catch (error) {
       console.error('Failed to extract keywords:', error);
+      alert(error instanceof Error ? error.message : 'Failed to extract keywords. Please try again.');
     } finally {
       setIsExtracting(false);
     }
