@@ -5,7 +5,23 @@ dotenv.config();
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+/**
+ * Test function to list available models
+ */
+export const listAvailableModels = async () => {
+  try {
+    const models = await genAI.listModels();
+    console.log('Available models:', models.map(m => m.name));
+    return models;
+  } catch (error) {
+    console.error('Error listing models:', error);
+    throw error;
+  }
+};
+
+// Use the correct model name format
+const model = genAI.getGenerativeModel({ model: 'gemini-1.0-pro' });
 
 /**
  * Extract keywords from job description

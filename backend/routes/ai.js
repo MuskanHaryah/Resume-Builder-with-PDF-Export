@@ -4,10 +4,31 @@ import {
   generateSummary, 
   generateBulletPoints, 
   suggestSkills,
-  generateProjectDescription 
+  generateProjectDescription,
+  listAvailableModels
 } from '../services/aiService.js';
 
 const router = express.Router();
+
+/**
+ * GET /api/ai/models
+ * List available AI models (for debugging)
+ */
+router.get('/models', async (req, res) => {
+  try {
+    const models = await listAvailableModels();
+    res.json({
+      success: true,
+      data: models
+    });
+  } catch (error) {
+    console.error('List models error:', error);
+    res.status(500).json({ 
+      error: 'Failed to list models',
+      details: error.message 
+    });
+  }
+});
 
 /**
  * POST /api/ai/extract-keywords
