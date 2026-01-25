@@ -140,20 +140,22 @@ const AIExperienceForm: React.FC<AIExperienceFormProps> = ({
 
   return (
     <div className="card">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-luna-500 flex items-center gap-2">
-          <Briefcase className="w-6 h-6 text-luna-200" />
-          Work Experience
+      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+        <div className="flex items-center gap-2">
+          <h3 className="text-xl font-bold text-luna-500 flex items-center gap-2">
+            <Briefcase className="w-6 h-6 text-luna-200" />
+            Work Experience
+          </h3>
           {aiMode && (
-            <span className="ml-2 px-2 py-0.5 bg-luna-100 text-luna-300 text-xs font-medium rounded-full flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
+            <span className="px-3 py-1 bg-luna-100 text-luna-300 text-xs font-medium rounded-full flex items-center gap-1.5 whitespace-nowrap">
+              <Sparkles className="w-3.5 h-3.5" />
               AI-Powered
             </span>
           )}
-        </h3>
+        </div>
         <button
           onClick={addExperience}
-          className="btn-secondary flex items-center gap-2"
+          className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
         >
           <Plus className="w-4 h-4" />
           Add Experience

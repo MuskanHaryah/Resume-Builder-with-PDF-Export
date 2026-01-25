@@ -243,9 +243,220 @@ const AIBuilder = () => {
     setCurrentStep('input');
   };
 
+  // Validate current step before moving to next
+  const validateCurrentStep = (): boolean => {
+    switch (formStep) {
+      case 1: // Personal Info - only firstName and email are mandatory
+        if (!personalInfo.firstName.trim()) {
+          toast.error('Please fill in your first name');
+          return false;
+        }
+        if (!personalInfo.email.trim()) {
+          toast.error('Please fill in your email address');
+          return false;
+        }
+        return true;
+      case 2: // Professional Summary - mandatory
+        if (!summary.trim()) {
+          toast.error('Please write a professional summary');
+          return false;
+        }
+        return true;
+      case 3: // Education - mandatory (at least one entry with all required fields)
+        if (education.length === 0) {
+          toast.error('Please add at least one education entry');
+          return false;
+        }
+        for (let i = 0; i < education.length; i++) {
+          const edu = education[i];
+          if (!edu.university.trim()) {
+            toast.error('Please fill in the University/Institution field');
+            return false;
+          }
+          if (!edu.degree.trim()) {
+            toast.error('Please fill in the Degree field');
+            return false;
+          }
+          if (!edu.field.trim()) {
+            toast.error('Please fill in the Field of Study');
+            return false;
+          }
+          if (!edu.startDate) {
+            toast.error('Please select the Start Date');
+            return false;
+          }
+          if (!edu.endDate) {
+            toast.error('Please select the End Date');
+            return false;
+          }
+        }
+        return true;
+      case 4: // Experience - optional but if added, must be complete
+        if (experience.length > 0) {
+          for (let i = 0; i < experience.length; i++) {
+            const exp = experience[i];
+            if (!exp.company.trim()) {
+              toast.error('Please fill in the Company field');
+              return false;
+            }
+            if (!exp.title.trim()) {
+              toast.error('Please fill in the Job Title field');
+              return false;
+            }
+            if (!exp.startDate) {
+              toast.error('Please select the Start Date');
+              return false;
+            }
+            if (!exp.current && !exp.endDate) {
+              toast.error('Please select the End Date or check "I currently work here"');
+              return false;
+            }
+            const hasValidBullet = exp.bulletPoints.some(bp => bp.trim().length > 0);
+            if (!hasValidBullet) {
+              toast.error('Please add at least one responsibility');
+              return false;
+            }
+          }
+        }
+        return true;
+      case 5: // Projects - optional but if added, must be complete
+        if (projects.length > 0) {
+          for (let i = 0; i < projects.length; i++) {
+            const proj = projects[i];
+            if (!proj.name.trim()) {
+              toast.error('Please fill in the Project Name');
+              return false;
+            }
+            if (proj.technologies.length === 0) {
+              toast.error('Please add at least one technology for the project');
+              return false;
+            }
+            if (proj.bulletPoints.length === 0 || !proj.bulletPoints.some(bp => bp.trim())) {
+              toast.error('Please add at least one bullet point describing the project');
+              return false;
+            }
+          }
+        }
+        return true;
+      case 6: // Skills - mandatory (at least one skill)
+        if (skills.length === 0) {
+          toast.error('Please add at least one skill');
+          return false;
+        }
+        return true;
+      case 7: // Leadership - optional but if added, must be complete
+        if (leadership.length > 0) {
+          for (let i = 0; i < leadership.length; i++) {
+            const lead = leadership[i];
+            if (!lead.title.trim()) {
+              toast.error('Please fill in the Title/Role field');
+              return false;
+            }
+            if (!lead.organization.trim()) {
+              toast.error('Please fill in the Organization field');
+              return false;
+            }
+            if (lead.bulletPoints.length === 0 || !lead.bulletPoints.some(bp => bp.trim())) {
+              toast.error('Please add at least one bullet point describing your leadership role');
+              return false;
+            }
+          }
+        }
+        return true;
+      default:
+        return true;
+    }
+  };
+
+  // Validate all mandatory sections before download
+  const validateAllMandatorySections = (): boolean => {
+    // 1. Personal Info - mandatory fields
+    if (!personalInfo.firstName.trim()) {
+      toast.error('Please fill in your First Name in Personal Info section');
+      setFormStep(1);
+      return false;
+    }
+    if (!personalInfo.email.trim() || !personalInfo.email.includes('@')) {
+      toast.error('Please provide a valid Email in Personal Info section');
+      setFormStep(1);
+      return false;
+    }
+
+    // 2. Summary - mandatory
+    if (!summary.trim()) {
+      toast.error('Please add a Professional Summary');
+      setFormStep(2);
+      return false;
+    }
+
+    // 3. Education - at least one complete entry
+    if (education.length === 0) {
+      toast.error('Please add at least one Education entry');
+      setFormStep(3);
+      return false;
+    }
+    for (const edu of education) {
+      if (!edu.university.trim()) {
+        toast.error('Please complete all Education fields (University is required)');
+        setFormStep(3);
+        return false;
+      }
+      if (!edu.degree.trim()) {
+        toast.error('Please complete all Education fields (Degree is required)');
+        setFormStep(3);
+        return false;
+      }
+      if (!edu.field.trim()) {
+        toast.error('Please complete all Education fields (Field of Study is required)');
+        setFormStep(3);
+        return false;
+      }
+    }
+
+    // 4. Skills - at least one skill
+    if (skills.length === 0) {
+      toast.error('Please add at least one Skill');
+      setFormStep(6);
+      return false;
+    }
+
+    return true;
+  };
+
+  // Clear all resume data from localStorage
+  const clearResumeData = () => {
+    localStorage.removeItem('ai_jobDescription');
+    localStorage.removeItem('ai_extractedKeywords');
+    localStorage.removeItem('ai_formStep');
+    localStorage.removeItem('ai_visitedSteps');
+    localStorage.removeItem('ai_personalInfo');
+    localStorage.removeItem('ai_summary');
+    localStorage.removeItem('ai_education');
+    localStorage.removeItem('ai_experience');
+    localStorage.removeItem('ai_projects');
+    localStorage.removeItem('ai_skills');
+    localStorage.removeItem('ai_leadership');
+  };
+
+  // Handle navigation after download
+  const handleGoHome = () => {
+    navigate('/');
+  };
+
+  const handleMakeAnother = () => {
+    setIsDownloadModalOpen(false);
+    setDownloadComplete(false);
+    // Reset to first step without clearing data
+    setCurrentStep('input');
+    setFormStep(1);
+  };
+
   // Form navigation
   const goToNextStep = () => {
     if (formStep < FORM_STEPS.length) {
+      if (!validateCurrentStep()) {
+        return; // Don't proceed if validation fails
+      }
       const nextStep = formStep + 1;
       setFormStep(nextStep);
       setVisitedSteps(prev => new Set([...prev, nextStep]));
@@ -288,64 +499,171 @@ const AIBuilder = () => {
     return () => clearTimeout(timer);
   }, [resumeData, checkPageOverflow]);
 
-  // PDF Download
+  // Handle PDF Download (same as Manual Builder)
   const handleDownloadPDF = async () => {
-    if (!resumeRef.current) return;
+    const resumeElement = document.getElementById('resume-content');
+    if (!resumeElement) {
+      console.error('Resume element not found');
+      toast.error('Resume preview not found');
+      return;
+    }
 
+    // Start downloading
     setIsDownloading(true);
     setDownloadComplete(false);
-    
-    try {
-      const element = resumeRef.current;
-      const letterWidthPx = 8.5 * 96;
-      const letterHeightPx = 11 * 96;
 
-      const canvas = await html2canvas(element, {
+    console.log('Starting PDF generation...');
+    console.log('Resume element:', resumeElement);
+    console.log('Resume element dimensions:', {
+      width: resumeElement.offsetWidth,
+      height: resumeElement.offsetHeight,
+      scrollHeight: resumeElement.scrollHeight
+    });
+
+    try {
+
+      // Wait a bit for any pending renders
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      console.log('Starting html2canvas...');
+      
+      // Capture the resume content as canvas - simplified approach
+      const canvas = await html2canvas(resumeElement, {
         scale: 2,
-        useCORS: true,
-        logging: false,
+        useCORS: false,
+        allowTaint: false,
         backgroundColor: '#ffffff',
-        width: letterWidthPx,
-        windowWidth: letterWidthPx,
+        logging: false,
+        foreignObjectRendering: false,
+        onclone: (clonedDoc) => {
+          // Only remove oklch colors, don't mess with anything else
+          const styleTags = clonedDoc.querySelectorAll('style');
+          styleTags.forEach((style) => {
+            if (style.textContent && style.textContent.includes('oklch')) {
+              style.textContent = style.textContent.replace(/oklch\([^)]+\)/g, '#ffffff');
+            }
+          });
+        }
       });
 
+      console.log('Canvas created:', {
+        width: canvas.width,
+        height: canvas.height
+      });
+
+      // A4 dimensions in mm
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const bottomMargin = 15; // Leave 15mm space at the bottom of each page
+      const usablePageHeight = pageHeight - bottomMargin;
+      
+      // Calculate image dimensions to fit A4 width
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      console.log('PDF dimensions:', {
+        imgWidth,
+        imgHeight,
+        pageHeight,
+        usablePageHeight,
+        pages: Math.ceil(imgHeight / usablePageHeight)
+      });
+
+      // Create PDF
       const pdf = new jsPDF({
         orientation: 'portrait',
-        unit: 'in',
-        format: 'letter',
+        unit: 'mm',
+        format: 'a4',
       });
 
-      const imgWidth = 8.5;
-      const imgHeight = (canvas.height / canvas.width) * imgWidth;
-      const pageHeight = 11;
-      let heightLeft = imgHeight;
-      let position = 0;
-      let page = 1;
-
+      console.log('Converting canvas to image...');
       const imgData = canvas.toDataURL('image/png');
+      console.log('Image data length:', imgData.length);
 
-      while (heightLeft > 0) {
-        if (page > 1) {
-          pdf.addPage();
+      // Check if content fits on one page (with bottom margin)
+      // Add 5% tolerance to prevent creating a second page for minor overflows
+      const toleranceThreshold = usablePageHeight * 1.05;
+      
+      if (imgHeight <= toleranceThreshold) {
+        console.log('Adding single page...');
+        // If slightly over, scale down to fit perfectly
+        const finalHeight = Math.min(imgHeight, usablePageHeight);
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, finalHeight);
+      } else {
+        console.log('Adding multiple pages with proper slicing...');
+        
+        // Calculate pixels per mm for precise slicing
+        const pxPerMm = canvas.width / imgWidth;
+        const usablePageHeightPx = usablePageHeight * pxPerMm;
+        const topMarginPx = 15 * pxPerMm; // 15mm top margin for page 2 onwards
+        
+        // First page
+        const page1Canvas = document.createElement('canvas');
+        page1Canvas.width = canvas.width;
+        page1Canvas.height = Math.min(usablePageHeightPx, canvas.height);
+        const ctx1 = page1Canvas.getContext('2d');
+        
+        if (ctx1) {
+          ctx1.fillStyle = '#ffffff';
+          ctx1.fillRect(0, 0, page1Canvas.width, page1Canvas.height);
+          ctx1.drawImage(canvas, 0, 0);
+          
+          const page1Data = page1Canvas.toDataURL('image/png');
+          pdf.addImage(page1Data, 'PNG', 0, 0, imgWidth, usablePageHeight);
         }
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-        position -= pageHeight;
-        page++;
+        
+        // Additional pages
+        let currentY = usablePageHeightPx;
+        
+        while (currentY < canvas.height) {
+          pdf.addPage();
+          
+          const remainingHeight = canvas.height - currentY;
+          const sliceHeight = Math.min(usablePageHeightPx, remainingHeight);
+          
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = sliceHeight + topMarginPx;
+          const ctx = pageCanvas.getContext('2d');
+          
+          if (ctx) {
+            // White background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+            
+            // Draw the slice with top margin
+            ctx.drawImage(
+              canvas,
+              0, currentY,
+              canvas.width, sliceHeight,
+              0, topMarginPx,
+              canvas.width, sliceHeight
+            );
+            
+            const pageData = pageCanvas.toDataURL('image/png');
+            const pageImgHeight = ((sliceHeight + topMarginPx) / canvas.width) * imgWidth;
+            pdf.addImage(pageData, 'PNG', 0, 0, imgWidth, pageImgHeight);
+          }
+          
+          currentY += usablePageHeightPx;
+        }
       }
 
-      const fileName = personalInfo.firstName && personalInfo.lastName
-        ? `${personalInfo.firstName}_${personalInfo.lastName}_Resume.pdf`
-        : 'resume.pdf';
-
+      // Download PDF
+      const fileName = `resume_${personalInfo.firstName || 'my'}_${personalInfo.lastName || 'resume'}.pdf`;
+      console.log('Saving PDF as:', fileName);
       pdf.save(fileName);
-      setDownloadComplete(true);
-      toast.success('Resume downloaded successfully!');
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF. Please try again.');
-    } finally {
+      
+      // Mark download as complete
       setIsDownloading(false);
+      setDownloadComplete(true);
+      console.log('PDF download complete!');
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error('PDF download error:', errorMsg);
+      setIsDownloading(false);
+      setIsDownloadModalOpen(false);
+      toast.error(`Failed to download PDF: ${errorMsg}`);
     }
   };
 
@@ -400,7 +718,7 @@ const AIBuilder = () => {
   return (
     <div className="min-h-screen bg-luna-100">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+      <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="container-custom py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -416,26 +734,60 @@ const AIBuilder = () => {
               </div>
             </div>
             
-            {/* Step indicator */}
-            <div className="flex items-center gap-2">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                currentStep === 'input' ? 'bg-luna-200 text-white' : 'bg-gray-100 text-gray-600'
-              }`}>
-                1. Job Description
-              </span>
-              <span className="text-gray-300">→</span>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                currentStep === 'keywords' ? 'bg-luna-200 text-white' : 'bg-gray-100 text-gray-600'
-              }`}>
-                2. Keywords
-              </span>
-              <span className="text-gray-300">→</span>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                currentStep === 'builder' ? 'bg-luna-200 text-white' : 'bg-gray-100 text-gray-600'
-              }`}>
-                3. Build Resume
-              </span>
-            </div>
+            {/* Header Right Side - Changes based on step */}
+            {currentStep === 'builder' ? (
+              <div className="flex items-center gap-4">
+                <div className={`px-4 py-2 rounded-lg border ${
+                  atsScore.totalScore >= 80 ? 'bg-green-50 border-green-200' : 
+                  atsScore.totalScore >= 60 ? 'bg-blue-50 border-blue-200' : 
+                  atsScore.totalScore >= 40 ? 'bg-yellow-50 border-yellow-200' : 
+                  'bg-red-50 border-red-200'
+                }`}>
+                  <span className={`text-sm font-bold ${
+                    atsScore.totalScore >= 80 ? 'text-green-600' : 
+                    atsScore.totalScore >= 60 ? 'text-blue-600' : 
+                    atsScore.totalScore >= 40 ? 'text-yellow-600' : 
+                    'text-red-600'
+                  }`}>
+                    ATS Score: {atsScore.totalScore}/100
+                  </span>
+                </div>
+                <button onClick={() => setIsATSModalOpen(true)} className="btn-secondary px-4 py-2">
+                  View Analysis
+                </button>
+                <button 
+                  onClick={() => {
+                    if (!validateAllMandatorySections()) {
+                      return;
+                    }
+                    setIsDownloadModalOpen(true);
+                  }}
+                  className="btn-primary px-6 py-2"
+                >
+                  Download PDF
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  currentStep === 'input' ? 'bg-luna-200 text-white' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  1. Job Description
+                </span>
+                <span className="text-gray-300">→</span>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  currentStep === 'keywords' ? 'bg-luna-200 text-white' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  2. Keywords
+                </span>
+                <span className="text-gray-300">→</span>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  currentStep === 'builder' ? 'bg-luna-200 text-white' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  3. Build Resume
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -463,169 +815,183 @@ const AIBuilder = () => {
 
         {/* Step 3: Builder */}
         {currentStep === 'builder' && (
-          <div className="flex gap-8">
-            {/* Left Side - Form */}
-            <div className="w-1/2 space-y-6">
-              {/* Form Step Navigation */}
-              <div className="bg-white rounded-xl shadow-sm p-4">
-                <div className="flex items-center justify-between gap-2 overflow-x-auto">
-                  {FORM_STEPS.map((step, index) => (
+          <>
+            {/* Progress Stepper - same as Manual Builder */}
+            <div className="mb-8 bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                {FORM_STEPS.map((step, index) => (
+                  <div key={step.id} className="flex items-center flex-1">
                     <button
-                      key={step.id}
-                      onClick={() => goToStep(step.id)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                      onClick={() => setFormStep(step.id)}
+                      className={`flex items-center gap-2 transition-all ${
                         formStep === step.id
-                          ? 'bg-luna-200 text-white'
+                          ? 'text-luna-500 font-bold'
                           : visitedSteps.has(step.id)
-                          ? 'bg-luna-50 text-luna-400 hover:bg-luna-100'
-                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          ? 'text-green-600 cursor-pointer hover:text-green-700'
+                          : 'text-gray-400 cursor-pointer hover:text-gray-600'
                       }`}
-                      disabled={!visitedSteps.has(step.id) && step.id !== formStep + 1}
                     >
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                        formStep === step.id
-                          ? 'bg-white/20'
-                          : visitedSteps.has(step.id)
-                          ? 'bg-luna-200 text-white'
-                          : 'bg-gray-200'
-                      }`}>
-                        {visitedSteps.has(step.id) && formStep !== step.id ? (
-                          <Check className="w-3 h-3" />
-                        ) : (
-                          step.id
-                        )}
-                      </span>
-                      {step.title}
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                          formStep === step.id
+                            ? 'bg-luna-200 text-white'
+                            : visitedSteps.has(step.id)
+                            ? 'bg-green-500 text-white'
+                            : 'bg-gray-200 text-gray-500'
+                        }`}
+                      >
+                        {visitedSteps.has(step.id) && formStep !== step.id ? <Check className="w-4 h-4" /> : step.id}
+                      </div>
+                      <span className="text-sm hidden md:inline">{step.title}</span>
                     </button>
-                  ))}
-                </div>
+                    {index < FORM_STEPS.length - 1 && (
+                      <div
+                        className={`flex-1 h-1 mx-2 rounded ${
+                          visitedSteps.has(step.id + 1) ? 'bg-green-500' : 'bg-gray-200'
+                        }`}
+                      />
+                    )}
+                  </div>
+                ))}
               </div>
+            </div>
 
-              {/* Current Form */}
-              {renderForm()}
+            <div className="grid lg:grid-cols-12 gap-6">
+              {/* Left: Form Panel */}
+              <div className="lg:col-span-5 space-y-6">
+                {/* Current Form */}
+                {renderForm()}
 
-              {/* Navigation Buttons */}
-              <div className="flex justify-between">
+                {/* ATS Score Button */}
                 <button
-                  onClick={goToPrevStep}
-                  disabled={formStep === 1}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
-                    formStep === 1
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
+                  onClick={() => setIsATSModalOpen(true)}
+                  className="w-full px-4 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-semibold rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all flex items-center justify-center gap-2"
                 >
-                  <ArrowLeftIcon className="w-4 h-4" />
-                  Previous
+                  <TrendingUp className="w-5 h-5" />
+                  View ATS Analysis
                 </button>
 
-                {formStep < FORM_STEPS.length ? (
-                  <button
-                    onClick={goToNextStep}
-                    className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium bg-luna-200 text-white hover:bg-luna-300 transition-colors"
-                  >
-                    Next
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setIsDownloadModalOpen(true)}
-                    className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
-                  >
-                    <FileText className="w-4 h-4" />
-                    Download PDF
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Right Side - Preview */}
-            <div className="w-1/2 space-y-4">
-              {/* ATS Score */}
-              <div className="bg-white rounded-xl shadow-sm p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold ${scoreColor}`}>
-                      {atsScore.score}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-700">ATS Score</p>
-                      <p className="text-sm text-gray-500">Resume optimization</p>
-                    </div>
+                {/* Navigation Buttons */}
+                <div className="flex items-center justify-between gap-4 pt-4">
+                  <div className="flex-1">
+                    {formStep > 1 && (
+                      <button
+                        onClick={goToPrevStep}
+                        className="px-6 py-3 bg-white border-2 border-luna-300 text-luna-500 font-semibold rounded-lg hover:bg-luna-50 transition-colors flex items-center gap-2"
+                      >
+                        <ArrowLeftIcon className="w-4 h-4" />
+                        Back
+                      </button>
+                    )}
                   </div>
-                  <button
-                    onClick={() => setIsATSModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-luna-50 text-luna-400 rounded-lg hover:bg-luna-100 transition-colors"
-                  >
-                    <TrendingUp className="w-4 h-4" />
-                    View Details
-                  </button>
-                </div>
-              </div>
 
-              {/* Page Overflow Warning */}
-              {exceedsOnePage && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                  <p className="text-amber-700 text-sm font-medium">
-                    ⚠️ Resume exceeds one page by {pageOverflowPercentage.toFixed(0)}%
-                  </p>
-                  <p className="text-amber-600 text-xs mt-1">
-                    Consider removing or condensing some content
-                  </p>
-                </div>
-              )}
+                  <span className="text-sm text-gray-600">
+                    Step {formStep} of {FORM_STEPS.length}
+                  </span>
 
-              {/* Preview */}
-              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="bg-gray-100 p-2 border-b flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600">Preview</span>
-                  <span className="text-xs text-gray-500">Live update</span>
-                </div>
-                <div className="p-4 bg-gray-200 max-h-[calc(100vh-300px)] overflow-y-auto">
-                  <div className="transform scale-[0.6] origin-top">
-                    <ResumePreview ref={resumeRef} data={resumeData} />
+                  <div className="flex-1 flex justify-end">
+                    {formStep < FORM_STEPS.length && (
+                      <button
+                        onClick={goToNextStep}
+                        className="btn-primary flex items-center gap-2"
+                      >
+                        Next
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
+
+              {/* Right: Preview Panel */}
+              <div className="lg:col-span-7 sticky top-6 h-fit">
+                <ResumePreview 
+                  ref={resumeRef} 
+                  data={resumeData}
+                  exceedsOnePage={exceedsOnePage}
+                  overflowPercentage={pageOverflowPercentage}
+                />
+              </div>
             </div>
-          </div>
+          </>
         )}
       </main>
 
       {/* ATS Modal */}
-      {isATSModalOpen && (
-        <ATSBreakdown
-          score={atsScore}
-          onClose={() => setIsATSModalOpen(false)}
-        />
-      )}
+      <ATSBreakdown
+        atsScore={atsScore}
+        isOpen={isATSModalOpen}
+        onClose={() => setIsATSModalOpen(false)}
+      />
 
       {/* Download Modal */}
       {isDownloadModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-luna-500 mb-4">Download Resume</h3>
-            <p className="text-gray-600 mb-6">
-              Your AI-optimized resume is ready for download as a PDF.
-            </p>
-            <div className="flex gap-4">
-              <button
-                onClick={() => setIsDownloadModalOpen(false)}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  handleDownloadPDF();
-                  setIsDownloadModalOpen(false);
-                }}
-                disabled={isDownloading}
-                className="flex-1 px-4 py-3 bg-luna-200 text-white rounded-lg font-medium hover:bg-luna-300 transition-colors disabled:opacity-50"
-              >
-                {isDownloading ? 'Generating...' : 'Download PDF'}
-              </button>
-            </div>
+            {!isDownloading && !downloadComplete ? (
+              // Confirmation state
+              <div>
+                <h3 className="text-xl font-bold text-luna-500 mb-4">Download Resume</h3>
+                <p className="text-gray-600 mb-6">
+                  Your AI-optimized resume is ready for download as a PDF.
+                </p>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setIsDownloadModalOpen(false)}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDownloadPDF}
+                    className="flex-1 px-4 py-3 bg-luna-300 text-white rounded-lg font-medium hover:bg-luna-400 transition-colors"
+                  >
+                    Download PDF
+                  </button>
+                </div>
+              </div>
+            ) : isDownloading ? (
+              <div className="text-center">
+                <div className="mb-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                    <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Generating PDF...</h3>
+                <p className="text-gray-600">Please wait while we prepare your resume</p>
+              </div>
+            ) : downloadComplete ? (
+              <div className="text-center">
+                <div className="mb-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                    <Check className="w-8 h-8 text-green-600" />
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">PDF Downloaded Successfully!</h3>
+                <p className="text-gray-600 mb-8">What would you like to do next?</p>
+                
+                <div className="space-y-3">
+                  <button
+                    onClick={handleGoHome}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-semibold rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all flex items-center justify-center gap-2"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                    Go to Home Page
+                  </button>
+                  
+                  <button
+                    onClick={handleMakeAnother}
+                    className="w-full px-6 py-3 bg-white border-2 border-indigo-500 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50 transition-all flex items-center justify-center gap-2"
+                  >
+                    <FileText className="w-5 h-5" />
+                    Make Another Resume
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       )}

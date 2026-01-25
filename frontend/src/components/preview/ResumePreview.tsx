@@ -72,7 +72,7 @@ const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ data, ex
             <AlertTriangle className="w-4 h-4 text-amber-600" />
             <div className="text-xs">
               <span className="font-semibold">Exceeds 1 page</span>
-              <span className="text-amber-700 ml-1">({overflowPercentage}% over)</span>
+              <span className="text-amber-700 ml-1">({overflowPercentage.toFixed(1)}% over)</span>
             </div>
           </div>
         )}
@@ -198,8 +198,8 @@ const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ data, ex
                     <ul className="list-none ml-4 space-y-0.5">
                       {exp.bulletPoints.map((bullet, idx) => (
                         bullet && (
-                          <li key={idx} className="text-black flex">
-                            <span className="mr-2">•</span>
+                          <li key={idx} className="text-black flex" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                            <span className="flex-shrink-0 mr-1">•</span>
                             <span className="flex-1">{bullet}</span>
                           </li>
                         )
@@ -231,8 +231,8 @@ const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ data, ex
                     <ul className="list-none ml-4 space-y-0.5 mt-1">
                       {project.bulletPoints.map((bullet, idx) => (
                         bullet && (
-                          <li key={idx} className="text-black flex">
-                            <span className="mr-2">•</span>
+                          <li key={idx} className="text-black flex" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                            <span className="flex-shrink-0 mr-1">•</span>
                             <span className="flex-1">{bullet}</span>
                           </li>
                         )
@@ -283,8 +283,8 @@ const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(({ data, ex
                     <ul className="list-none ml-4 mt-0.5 space-y-0.5">
                       {lead.bulletPoints.map((bullet, idx) => (
                         bullet && (
-                          <li key={idx} className="text-black flex">
-                            <span className="mr-2">•</span>
+                          <li key={idx} className="text-black flex" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                            <span className="flex-shrink-0 mr-1">•</span>
                             <span className="flex-1">{bullet}</span>
                           </li>
                         )

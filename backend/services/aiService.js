@@ -21,7 +21,7 @@ export const listAvailableModels = async () => {
 };
 
 // Use the correct model name format
-const model = genAI.getGenerativeModel({ model: 'gemini-1.0-pro' });
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
 /**
  * Extract keywords from job description

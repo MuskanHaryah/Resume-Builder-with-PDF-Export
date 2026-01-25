@@ -66,22 +66,22 @@ const KeywordDisplay: React.FC<KeywordDisplayProps> = ({
       <div className="bg-gradient-to-r from-luna-200 to-luna-300 rounded-xl shadow-lg p-6 mb-6 text-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
-              <Sparkles className="w-7 h-7" />
+            <div className="w-14 h-14 bg-white/30 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/20">
+              <Sparkles className="w-7 h-7 text-white" />
             </div>
             <div>
               <h2 className="text-2xl font-bold">Keywords Extracted Successfully!</h2>
-              <p className="text-white text-opacity-90">
+              <p className="text-white/90">
                 Found {totalKeywords} relevant keywords to optimize your resume
               </p>
             </div>
           </div>
           <button
             onClick={onReExtract}
-            className="flex items-center gap-2 px-4 py-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition-colors text-sm font-medium border border-white/20"
           >
-            <RefreshCw className="w-4 h-4" />
-            Re-extract
+            <RefreshCw className="w-4 h-4 text-white" />
+            <span className="text-white">Re-extract</span>
           </button>
         </div>
       </div>
@@ -144,7 +144,7 @@ const KeywordDisplay: React.FC<KeywordDisplayProps> = ({
       <div className="flex justify-center">
         <button
           onClick={onContinue}
-          className="flex items-center gap-3 px-8 py-4 bg-luna-200 text-white rounded-xl font-semibold text-lg shadow-lg hover:bg-luna-300 hover:shadow-xl transition-all"
+          className="flex items-center gap-3 px-8 py-4 bg-luna-300 text-white rounded-xl font-semibold text-lg shadow-lg hover:bg-luna-400 hover:shadow-xl transition-all"
         >
           Continue to Resume Builder
           <ArrowRight className="w-5 h-5" />

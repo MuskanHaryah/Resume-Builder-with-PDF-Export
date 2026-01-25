@@ -301,11 +301,6 @@ const ManualBuilder = () => {
 
   // Handle PDF Download
   const handleDownloadPDF = async () => {
-    // Validate all mandatory sections first
-    if (!validateAllMandatorySections()) {
-      return;
-    }
-
     const resumeElement = document.getElementById('resume-content');
     if (!resumeElement) {
       console.error('Resume element not found');
@@ -313,8 +308,7 @@ const ManualBuilder = () => {
       return;
     }
 
-    // Open modal and start downloading
-    setIsDownloadModalOpen(true);
+    // Start downloading
     setIsDownloading(true);
     setDownloadComplete(false);
 
@@ -681,14 +675,13 @@ const ManualBuilder = () => {
                 View Analysis
               </button>
               <button 
-                onClick={handleDownloadPDF} 
-                disabled={!isMandatorySectionsComplete}
-                className={`px-6 py-2 rounded-lg font-semibold transition-all ${
-                  isMandatorySectionsComplete
-                    ? 'btn-primary hover:opacity-90'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-                title={!isMandatorySectionsComplete ? 'Please complete all mandatory sections: Personal Info, Summary, Education, and Skills' : 'Download your resume as PDF'}
+                onClick={() => {
+                  if (!validateAllMandatorySections()) {
+                    return;
+                  }
+                  setIsDownloadModalOpen(true);
+                }}
+                className="btn-primary px-6 py-2"
               >
                 Download PDF
               </button>
@@ -807,9 +800,31 @@ const ManualBuilder = () => {
 
       {/* Download Modal */}
       {isDownloadModalOpen && (
-        <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
-            {isDownloading ? (
+            {!isDownloading && !downloadComplete ? (
+              // Confirmation state
+              <div>
+                <h3 className="text-xl font-bold text-luna-500 mb-4">Download Resume</h3>
+                <p className="text-gray-600 mb-6">
+                  Your resume is ready for download as a PDF.
+                </p>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setIsDownloadModalOpen(false)}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDownloadPDF}
+                    className="flex-1 px-4 py-3 bg-luna-300 text-white rounded-lg font-medium hover:bg-luna-400 transition-colors"
+                  >
+                    Download PDF
+                  </button>
+                </div>
+              </div>
+            ) : isDownloading ? (
               <div className="text-center">
                 <div className="mb-6">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
