@@ -75,14 +75,6 @@ cd frontend && npm run dev
     └── services/      # Gemini AI integration
 ```
 
-## 📸 Screenshots
+## 📄 License
 
-*Coming soon...*
-
----
-
-<div align="center">
-
-Made with ❤️ using React & AI
-
-</div>
+MIT License — feel free to use this project for learning and development!
